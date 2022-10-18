@@ -6,9 +6,9 @@
 #define TASK_1
 #define TASK_2
 #define TASK_3
-//#define TASK_4
-//#define TASK_5
-//#define TASK_6
+#define TASK_4
+#define TASK_5
+#define TASK_6
 
 // NOLINTBEGIN(readability-function-cognitive-complexity)
 
@@ -334,7 +334,7 @@ TEST_CASE("assignment operators") {
 
 	CHECK("1234" == a.to_string());
 	CHECK("56" == b.to_string());
-	CHECK("1178" == c.to_string()); */
+	CHECK("1178" == c.to_string());
 }
 #endif  // TASK_4
 

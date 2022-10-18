@@ -1,3 +1,4 @@
+#include <iostream>
 #include <vector>
 #include <string>
 #include <algorithm>
@@ -12,8 +13,26 @@ public:
 	bigint(uint32_t n);
 	bigint();
 
+	bigint& operator++();
+	bigint operator++(int);
+
+	bigint& operator--();
+	bigint operator--(int);
+
 	friend bigint operator+(const bigint& n1, const bigint& n2);
 	friend bigint operator+=(bigint& n1, const bigint& n2);
+
+	friend bigint operator+(int n1, const bigint& n2);
+	friend bigint operator+(const bigint& n1, int n2);
+	friend bigint operator+=(bigint& n1, int n2);
+
+	friend bigint operator-(const bigint& n1, const bigint& n2);
+	friend bigint operator-=(bigint& n1, const bigint& n2);
+
+	friend bigint operator-=(bigint& n1, int n2);
+
+	friend bigint operator-(const bigint& n1, int n2);
+	friend bigint operator-(int n1, const bigint& n2);
 
 	friend bool operator==(const bigint& n1, const bigint& n2);
 	friend bool operator!=(const bigint& n1, const bigint& n2);
@@ -32,6 +51,9 @@ public:
 	friend bool operator>(const bigint& n1, int n2);
 	friend bool operator<(int n1, const bigint& n2);
 	friend bool operator<(const bigint& n1, int n2);
+
+	friend std::ostream& operator<<(std::ostream& s, const bigint& b);
+	friend std::istream& operator>>(std::istream& s, bigint& b);
 };
 
 inline bigint::bigint(std::string s) {
@@ -46,6 +68,47 @@ inline bigint::bigint(std::string s) {
 inline bigint::bigint(uint32_t n) : bigint(std::to_string(n)) { }
 
 inline bigint::bigint() : bigint(0) { }
+
+inline bigint& bigint::operator++()
+{
+	size_t len = this->number.size();
+	size_t i;
+	for (i = 0; i < len && this->number[i] == BASE - 1; i++)
+		this->number[i] = 0;
+	if (i == len)
+		this->number.push_back(1);
+	else
+		this->number[i]++;
+	return *this;
+}
+
+inline bigint bigint::operator++(int)
+{
+	bigint tmp;
+	tmp = *this;
+	++(*this);
+	return tmp;
+}
+
+inline bigint& bigint::operator--()
+{
+	size_t len = this->number.size();
+	size_t i;
+	for (i = 0; i < len && this->number[i] == 0; i++)
+		number[i] = BASE - 1;
+	number[i]--;
+	if (len > 1 && number[len - 1] == 0)
+		number.pop_back();
+	return *this;
+}
+
+inline bigint bigint::operator--(int)
+{
+	bigint tmp;
+	tmp = *this;
+	--(*this);
+	return tmp;
+}
 
 inline bigint::operator int() const
 {
@@ -101,6 +164,78 @@ inline bigint operator+=(bigint& n1, const bigint& n2)
 	bigint n3 = n1 + n2;
 	n1 = n3;
 	return n3;
+}
+
+inline bigint operator+(int n1, const bigint& n2)
+{
+	return bigint(static_cast<uint32_t>(n1)) + n2;
+}
+
+inline bigint operator+(const bigint& n1, int n2)
+{
+	return n1 + bigint(static_cast<uint32_t>(n2));
+}
+
+inline bigint operator+=(bigint& n1, int n2)
+{
+	return n1 += bigint(static_cast<uint32_t>(n2));
+}
+
+inline bigint operator-(const bigint& n1, const bigint& n2)
+{
+	bigint n3;
+	int tmp = 0;
+	size_t lenN1 = n1.number.size();
+	size_t lenN2 = n2.number.size();
+	size_t len = lenN1 > lenN2 ? lenN1 : lenN2;
+	size_t minN = lenN1 < lenN2 ? lenN1 : lenN2;
+	bigint maxNumb = (lenN1 > lenN2 ? n1 : n2);
+	n3.number.assign(len, 0);
+
+	for (size_t i = 0; i < len; i++)
+	{
+		int v;
+		if (i < minN)
+			v = static_cast<int>(n1.number[i] - n2.number[i]);
+		else
+			v = maxNumb.number[i];
+		v += tmp;
+		if (v < 0)
+		{
+			v += BASE;
+			tmp = -1;
+		}
+		else
+			tmp = 0;
+
+		n3.number[i] = static_cast<uint32_t>(v);
+	}
+
+	while (len > 1 && !n3.number[len - 1]) n3.number.pop_back(), len--;
+	return n3;
+}
+
+inline bigint operator-=(bigint& n1, const bigint& n2)
+{
+	bigint n3 = n1 - n2;
+	n1 = n3;
+	return n1;
+}
+
+
+inline bigint operator-=(bigint& n1, int n2)
+{
+	return n1 -= bigint(static_cast<uint32_t>(n2));
+}
+
+inline bigint operator-(const bigint& n1, int n2)
+{
+	return n1 - bigint(static_cast<uint32_t>(n2));
+}
+
+inline bigint operator-(int n1, const bigint& n2)
+{
+	return bigint(static_cast<uint32_t>(n1)) - n2;
 }
 
 inline bool operator==(const bigint& n1, const bigint& n2)
@@ -170,4 +305,27 @@ inline bool operator<(int n1, const bigint& n2)
 inline bool operator<(const bigint& n1, int n2)
 {
 	return static_cast<int>(n1) < static_cast<int>(n2);
+}
+
+inline std::ostream& operator<<(std::ostream& s, const bigint& b)
+{
+	// TODO: Переделать без итераторов
+	for (std::vector<unsigned int>::const_reverse_iterator it = b.number.rbegin(); it != b.number.rend(); it++)
+		s << (char)('0' + *it);
+	return s;
+}
+
+inline std::istream& operator>>(std::istream& s, bigint& b)
+{
+	b = bigint();
+	std::string str;
+	s >> str;
+	for (size_t i = 0; i < str.size(); i++)
+		b.number.push_back(static_cast<uint32_t>(str[i] - '0'));
+	std::reverse(b.number.begin(), b.number.end());
+
+	size_t len = b.number.size();
+	while (!b.number[len - 1] && len > 1) b.number.pop_back(), len--;
+
+	return s;
 }
